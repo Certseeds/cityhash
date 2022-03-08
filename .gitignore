@@ -1,0 +1,13 @@
+.idea/*
+*.o
+*.lo
+*.a
+*.la
+*.lai
+*.so
+*.so.*
+*_unittest
+*.log
+*.status
+config.h
+[Cc][Mm]ake-build-*

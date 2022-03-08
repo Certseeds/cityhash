@@ -1,0 +1,57 @@
+name: test for pull_request
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches-ignore:
+      - 'release'
+  pull_request:
+    branches-ignore:
+      - 'release'
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  test-ubuntu:
+    name: test for pull_request
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-18.04, ubuntu-latest ]
+        gcc_v: [11] # Version of G++,GCC
+    env:
+      GCC_V: ${{ matrix.gcc_v }}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: checkout code
+        uses: actions/checkout@v2
+
+      - name: hardwares - cpu
+        run: nproc; cat /proc/cpuinfo
+
+      - name: Install GCC-11,G++-11
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update && sudo apt-get install -y gcc-${GCC_V} g++-${GCC_V}
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_V} 111
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${GCC_V} 111
+
+      - name: Use cmake
+        run: cmake --version
+
+      - name: prepare folder
+        run: cmake -E make_directory ./CMAKE_DEBUG_PATH
+
+      - name: cmake prepare for compile
+        working-directory: ./CMAKE_DEBUG_PATH
+        run: cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: cmake compile
+        working-directory: ./CMAKE_DEBUG_PATH
+        run: cmake --build . --parallel
+
+      - name: cmake test
+        working-directory: ./CMAKE_DEBUG_PATH
+        run: ctest --parallel $(nproc)
